@@ -38,7 +38,8 @@ def dic_response(n_clicks, input_text):
     if n_clicks > 0 and input_text:
         response = openai.Completion.create(
             engine="text-davinci-003",
-            prompt=f"Translate this in Portuguese from Portugal, DO NOT USE Portuguese from Brazil, only use Portuguese from Portugal: {input_text}",
+            prompt=f"Translate this in Portuguese from Portugal, DO NOT USE Portuguese from Brazil,\
+                  only use Portuguese from Portugal, only the translation with no explnatio, here is the text: {input_text}",
             temperature=0,
             max_tokens=100
         )
