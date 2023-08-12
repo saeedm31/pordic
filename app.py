@@ -2,6 +2,7 @@ import dash
 from dash import dcc, html
 from dash.dependencies import Input, Output, State
 import openai
+import os
 
 import configparser
 
@@ -54,6 +55,6 @@ def clear_input(n_clicks):
 
 
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    app.run(debug=True, port=int(os.environ.get("PORT", 5000)), host='0.0.0.0')
 
 
