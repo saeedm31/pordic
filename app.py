@@ -48,8 +48,8 @@ def translate_text(n_clicks, input_text):
     if n_clicks > 0 and input_text:
         response = openai.Completion.create(
             engine="text-davinci-003",
-            prompt=f"Translate this Text into Portuguese from Portugal, but please exclude Brazilian Portuguese. If the Text \
-                 is in Portuguese, please translate it to English, here is the Text: {input_text}",
+            prompt=f"Detect the language of the folowing this Text after : and if it's in any language Translate the Text into Portuguese from Portugal, but please do not use Brazilian Portuguese. If the Text \
+                 is in Portuguese in any version of Portugal or Brazil, please translate it to English, here is the Text: {input_text}",
             temperature=0,
             max_tokens=400,
             api_key=os.environ["api_key"]
