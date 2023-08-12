@@ -6,17 +6,17 @@ import os
 
 import configparser
 
-# Create a ConfigParser object
 config = configparser.ConfigParser()
+config.read('config.ini')  # Replace 'config.ini' with the actual path to your config file
 
-openai.api_key = config.get("OpenAI", "api_key")
-
-
-# Read the config.ini file
-config.read("config.ini")
+# Get the API key from the configuration
+api_key = config.get('OpenAI', 'api_key')
 
 
-app = dash.Dash()
+openai.api_key = api_key
+
+
+app = dash.Dash(__name__)
 
 server = app.server
 
