@@ -4,16 +4,13 @@ from dash.dependencies import Input, Output, State
 import openai
 import os
 
-import configparser
-
-config = configparser.ConfigParser()
-config.read('config.ini')  # Replace 'config.ini' with the actual path to your config file
-
-# Get the API key from the configuration
-api_key = config.get('OpenAI', 'api_key')
+# import configparser
+# config = configparser.ConfigParser()
+# config.read('config.ini')  # Replace 'config.ini' with the actual path to your config file
+# api_key = config.get('OpenAI', 'api_key')
 
 
-openai.api_key = api_key
+openai.api_key = os.environ["api_key"]
 
 
 app = dash.Dash(__name__)
@@ -28,6 +25,7 @@ app.layout = html.Div([
     html.Div(id="translation-output"),
     html.Button("Clear", id="clear-button"),
 ])
+
 
 @app.callback(
     Output("translation-output", "children"),
