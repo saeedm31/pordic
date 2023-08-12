@@ -1,4 +1,3 @@
-python
 dash
 openai
 gunicorn
