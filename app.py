@@ -17,6 +17,8 @@ config.read("config.ini")
 
 app = dash.Dash()
 
+server = app.server
+
 app.layout = html.Div([
     html.H1("Dictionary"),
     dcc.Textarea(id="input-box", value="", rows=10, cols=50, maxLength=200),
@@ -51,8 +53,7 @@ def clear_input(n_clicks):
         return ""
 
 
-# if __name__ == "__main__":
-#     app.run_server(debug=True)
+if __name__ == "__main__":
+    app.run_server(debug=True)
 
 
-server = app.server
