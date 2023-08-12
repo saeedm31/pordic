@@ -41,7 +41,7 @@ def dic_response(n_clicks, input_text):
             prompt=f"Translate this in Portuguese from Portugal, DO NOT USE Portuguese from Brazil,\
                   only use Portuguese from Portugal, only the translation with no explnatio, here is the text: {input_text}",
             temperature=0,
-            max_tokens=100
+            max_tokens=400
         )
         translation = response.choices[0].text.strip()
         return translation
