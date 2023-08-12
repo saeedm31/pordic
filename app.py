@@ -4,12 +4,12 @@ from dash.dependencies import Input, Output, State
 import openai
 import os
 
-import configparser
+# import configparser
 
-# Load API key from config.ini
 # config = configparser.ConfigParser()
 # config.read('config.ini')
-# api_key = config.get('OpenAI', 'api_key')
+# pythonapi_key = config.get('OpenAI', 'api_key')
+
 openai.api_key = os.environ["api_key"]
 
 app = dash.Dash(__name__)
@@ -52,7 +52,7 @@ def translate_text(n_clicks, input_text):
                  is in Portuguese, please translate it to English, here is the Text: {input_text}",
             temperature=0,
             max_tokens=400,
-            api_key=api_key
+            api_key=os.environ["api_key"]
         )
         translation = response.choices[0].text.strip()
         return html.Div([
@@ -69,6 +69,6 @@ def clear_input(n_clicks):
         return ""
 
 if __name__ == "__main__":
-    app.run(debug=True, port=int(os.environ.get("PORT", 5000)), host='0.0.0.0')
+    app.run(debug=True, port=int(os.environ.get("PORT", 5001)), host='0.0.0.0')
 
 
