@@ -5,7 +5,6 @@ import openai
 import os
 
 # import configparser
-
 # config = configparser.ConfigParser()
 # config.read('config.ini')
 # pythonapi_key = config.get('OpenAI', 'api_key')
@@ -48,16 +47,17 @@ def translate_text(n_clicks, input_text):
     if n_clicks > 0 and input_text:
         response = openai.Completion.create(
             engine="text-davinci-003",
-            prompt=f"Detect the language of the folowing this Text after : and if it's in any language Translate the Text into Portuguese from Portugal, but please do not use Brazilian Portuguese. If the Text \
-                 is in Portuguese in any version of Portugal or Brazil, please translate it to English, here is the Text: {input_text}",
+            prompt=f"Detect the language of the folowing Text and translate the Text into Portuguese from Portugal, do not use Brazilian Portuguese. If the Text \
+                 is in Portuguese, translate the text to English,only return the translation, no explnation, here is the Text: {input_text}",
             temperature=0,
             max_tokens=400,
             api_key=os.environ["api_key"]
         )
         translation = response.choices[0].text.strip()
         return html.Div([
-            dcc.Markdown(f"{translation}"),
-            dcc.Markdown(f"**Translation:**")
+            dcc.Markdown(f"**Translation:**"),
+            dcc.Markdown(f"{translation}")
+            
         ])
 
 @app.callback(
@@ -69,6 +69,6 @@ def clear_input(n_clicks):
         return ""
 
 if __name__ == "__main__":
-    app.run(debug=True, port=int(os.environ.get("PORT", 5000)), host='0.0.0.0')
+    app.run(debug=True, port=int(os.environ.get("PORT", 5003)), host='0.0.0.0')
 
 
