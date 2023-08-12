@@ -15,7 +15,7 @@ openai.api_key = config.get("OpenAI", "api_key")
 config.read("config.ini")
 
 
-app = dash.Dash(__name__)
+app = dash.Dash()
 
 app.layout = html.Div([
     html.H1("Dictionary"),
@@ -50,5 +50,9 @@ def clear_input(n_clicks):
     if n_clicks is not None and n_clicks > 0:
         return ""
 
-if __name__ == "__main__":
-    app.run_server(debug=True)
+
+# if __name__ == "__main__":
+#     app.run_server(debug=True)
+
+
+server = app.server
