@@ -20,7 +20,7 @@ app.layout = html.Div(
         html.H1("Portuguese Translate and Dictionary (pordic V.1)", style={"text-align": "center"}),
         html.Div([
             html.H3("Translate text from any language to Portuguese (Portugal version) or from Portuguese to \
-                    English with the power of CHATGPT."),
+                    English with the power of ChatGPT (gpt-3.5-turbo)."),
             dcc.Textarea(id="input-box", value="", rows=5, cols=50, maxLength=200),
             html.Div([
                 html.Div([
@@ -45,15 +45,29 @@ app.layout = html.Div(
 )
 def translate_text(n_clicks, input_text):
     if n_clicks > 0 and input_text:
-        response = openai.Completion.create(
-            engine="gpt-3.5-turbo",
-            prompt=f"Detect the language of the folowing Text and translate the Text into Portuguese from Portugal, do not use Brazilian Portuguese. If the Text \
-                 is in Portuguese, translate the text to English,only return the translation, no explnation, here is the Text: {input_text}",
-            temperature=0,
-            max_tokens=400,
-            api_key=os.environ["api_key"]
+        # response = openai.Completion.create(
+        #     engine="gpt-3.5-turbo",
+        #     prompt=f"Detect the language of the folowing Text and translate the Text into Portuguese from Portugal, do not use Brazilian Portuguese. If the Text \
+        #          is in Portuguese, translate the text to English,only return the translation, no explnation, here is the Text: {input_text}",
+        #     temperature=0,
+        #     max_tokens=400,
+        #     api_key=os.environ["api_key"]
+        # )
+        # translation = response.choices[0].text.strip()
+        prompt=f"Detect the language of the folowing Text and translate the Text into Portuguese from Portugal, do not use Brazilian Portuguese, If the Text \
+                  is in Portuguese, translate the text to English,only return the translation, no explnation, only return the translatiion"
+        prompt_2=f"only return the translation, no explnation, only return the translatiion, here is the Text: {input_text}"
+        completion = openai.ChatCompletion.create(
+        model = 'gpt-3.5-turbo',
+        messages = [
+            {"role": "system", "content": prompt},
+            {'role': 'assistant', 'content': prompt_2}
+        ],
+        temperature = 0  
         )
-        translation = response.choices[0].text.strip()
+
+        print(completion['choices'][0]['message']['content'])
+        translation = completion['choices'][0]['message']['content']
         return html.Div([
             dcc.Markdown(f"**Translation:**"),
             dcc.Markdown(f"{translation}")
@@ -69,6 +83,6 @@ def clear_input(n_clicks):
         return ""
 
 if __name__ == "__main__":
-    app.run(debug=True, port=int(os.environ.get("PORT", 5003)), host='0.0.0.0')
+    app.run(debug=True, port=int(os.environ.get("PORT", 5004)), host='0.0.0.0')
 
 
