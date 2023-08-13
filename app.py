@@ -46,7 +46,7 @@ app.layout = html.Div(
 def translate_text(n_clicks, input_text):
     if n_clicks > 0 and input_text:
         response = openai.Completion.create(
-            engine="text-davinci-003",
+            engine="gpt-3.5-turbo",
             prompt=f"Detect the language of the folowing Text and translate the Text into Portuguese from Portugal, do not use Brazilian Portuguese. If the Text \
                  is in Portuguese, translate the text to English,only return the translation, no explnation, here is the Text: {input_text}",
             temperature=0,
