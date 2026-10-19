@@ -1,88 +1,86 @@
-import dash
-from dash import dcc, html
-from dash.dependencies import Input, Output, State
-import openai
+"""pordic: a European Portuguese translator and dictionary (Flask app)."""
+
+import logging
 import os
+import threading
+import time
+from collections import defaultdict, deque
 
-# import configparser
-# config = configparser.ConfigParser()
-# config.read('config.ini')
-# pythonapi_key = config.get('OpenAI', 'api_key')
+from flask import Flask, jsonify, render_template, request
+from werkzeug.middleware.proxy_fix import ProxyFix
 
-openai.api_key = os.environ["api_key"]
+import llm
+import translator
 
-app = dash.Dash(__name__)
+app = Flask(__name__)
+app.json.sort_keys = False  # keep conjugations in eu, tu, ele... order
+log = logging.getLogger(__name__)
 
-server = app.server
+# Behind nginx, Heroku or another proxy, set TRUST_PROXY=1 so rate limits use the real client IP.
+if os.environ.get("TRUST_PROXY") == "1":
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1)
 
-app.layout = html.Div(
-    children=[
-        html.H1("Portuguese Translate and Dictionary (pordic V.1)", style={"text-align": "center"}),
-        html.Div([
-            html.H3("Translate text from any language to Portuguese (Portugal version) or from Portuguese to \
-                    English with the power of ChatGPT (gpt-3.5-turbo)."),
-            dcc.Textarea(id="input-box", value="", rows=5, cols=50, maxLength=200),
-            html.Div([
-                html.Div([
-                    html.Button("Translate", id="translate-button", n_clicks=0, className="btn-translate"),
-                ], className="translate-button-container"),
-                html.Div(id="translation-output", className="translation-box"),
-            ], className="button-group"),
-            html.Div([html.Br(), html.Br()]),  # Add space between the button group and the Clear button
-            html.Div([
-                html.Button("Clear", id="clear-button", n_clicks=0, className="btn-clear"),
-            ], className="clear-button-container"),
-        ], className="translation-container"),
-    ],
-    className="main-container",
-    style={"backgroundColor": "lightgreen", "padding": "20px"}
-)
 
-@app.callback(
-    Output("translation-output", "children"),
-    Input("translate-button", "n_clicks"),
-    State("input-box", "value")
-)
-def translate_text(n_clicks, input_text):
-    if n_clicks > 0 and input_text:
-        # response = openai.Completion.create(
-        #     engine="gpt-3.5-turbo",
-        #     prompt=f"Detect the language of the folowing Text and translate the Text into Portuguese from Portugal, do not use Brazilian Portuguese. If the Text \
-        #          is in Portuguese, translate the text to English,only return the translation, no explnation, here is the Text: {input_text}",
-        #     temperature=0,
-        #     max_tokens=400,
-        #     api_key=os.environ["api_key"]
-        # )
-        # translation = response.choices[0].text.strip()
-        prompt=f"Detect the language of the folowing Text and translate the Text into Portuguese from Portugal, do not use Brazilian Portuguese, If the Text \
-                  is in Portuguese, translate the text to English,only return the translation, no explnation, only return the translatiion"
-        prompt_2=f"only return the translation, no explnation, only return the translatiion, here is the Text: {input_text}"
-        completion = openai.ChatCompletion.create(
-        model = 'gpt-3.5-turbo',
-        messages = [
-            {"role": "system", "content": prompt},
-            {'role': 'assistant', 'content': prompt_2}
-        ],
-        temperature = 0  
-        )
+class RateLimiter:
+    """Allow at most `limit` requests per `window` seconds per client. Keeps API costs in check."""
 
-        print(completion['choices'][0]['message']['content'])
-        translation = completion['choices'][0]['message']['content']
-        return html.Div([
-            dcc.Markdown(f"**Translation:**"),
-            dcc.Markdown(f"{translation}")
-            
-        ])
+    def __init__(self, limit, window=60.0):
+        self.limit, self.window = limit, window
+        self.hits = defaultdict(deque)
+        self.lock = threading.Lock()
 
-@app.callback(
-    Output("input-box", "value"),
-    Input("clear-button", "n_clicks")
-)
-def clear_input(n_clicks):
-    if n_clicks is not None and n_clicks > 0:
-        return ""
+    def allow(self, key, now=None):
+        now = time.monotonic() if now is None else now
+        with self.lock:
+            q = self.hits[key]
+            while q and now - q[0] >= self.window:
+                q.popleft()
+            if len(q) >= self.limit:
+                return False
+            q.append(now)
+            return True
+
+
+limiter = RateLimiter(int(os.environ.get("RATE_LIMIT_PER_MINUTE", 20)))
+
+
+def handle(action):
+    """Shared request handling: config check, rate limit, input and model errors."""
+    if not llm.is_configured():
+        return jsonify(error="The translator isn't set up yet: OPENAI_API_KEY is missing."), 503
+    if not limiter.allow(request.remote_addr or "unknown"):
+        return jsonify(error="Too many requests. Please wait a minute and try again."), 429
+    body = request.get_json(silent=True) or {}
+    try:
+        return jsonify(action(body))
+    except translator.InputError as e:
+        return jsonify(error=str(e)), 400
+    except llm.LLMError as e:
+        log.warning("Model error: %s", e)
+        return jsonify(error="The translation service had a problem. Please try again."), 502
+
+
+@app.post("/api/translate")
+def api_translate():
+    return handle(lambda b: translator.translate(b.get("text"), b.get("direction", "auto"),
+                                                 b.get("register", "neutral")))
+
+
+@app.post("/api/lookup")
+def api_lookup():
+    return handle(lambda b: translator.lookup(b.get("word")))
+
+
+@app.get("/health")
+def health():
+    return jsonify(ok=True, configured=llm.is_configured(), model=llm.MODEL)
+
+
+@app.get("/")
+def index():
+    return render_template("index.html", max_text=translator.MAX_TEXT, max_word=translator.MAX_WORD)
+
 
 if __name__ == "__main__":
-    app.run(debug=True, port=int(os.environ.get("PORT", 5004)), host='0.0.0.0')
-
-
+    # Local development only. In production: gunicorn app:app (see Procfile / Dockerfile).
+    app.run(host=os.environ.get("HOST", "127.0.0.1"), port=int(os.environ.get("PORT", 5004)))
