@@ -5,7 +5,7 @@
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/Web-Flask-000000?logo=flask)](https://flask.palletsprojects.com/)
 [![LLM](https://img.shields.io/badge/LLM-OpenAI%20%7C%20Ollama-412991)](#-choose-a-model)
-[![Tests](https://img.shields.io/badge/tests-20%20passing-brightgreen)](#-tests)
+[![Tests](https://github.com/saeedm31/pordic/actions/workflows/tests.yml/badge.svg)](https://github.com/saeedm31/pordic/actions/workflows/tests.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
 ---
@@ -87,7 +87,7 @@ Keys are only read from environment variables. Never commit `.env`; it's in `.gi
 python -m unittest
 ```
 
-20 tests, run offline against a fake model:
+20 tests, run offline against a fake model on every push (GitHub Actions):
 - the prompts and pt-PT rules
 - cleaning of messy model replies
 - the HTTP client's error handling
